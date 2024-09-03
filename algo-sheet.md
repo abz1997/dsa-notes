@@ -301,27 +301,23 @@ function binarySearch(array, target):
     3. Return "Not Found" or an equivalent indicator (like -1).
 ```
 
-```javascript
-function binarySearch(arr: number[], target: number): number {
-    let left = 0;
-    let right = arr.length - 1;
+```python
+def binarySearch(arr: number[], target: number):
+    left = 0;
+    right = length(arr) - 1;
 
-    while (left <= right) {
-        const mid = Math.floor((left + right) / 2);
+    while left <= right:
+        mid = (left + right) // 2
 
-        if (arr[mid] === target) {
+        if arr[mid] === target:
             return mid;  // Target value found, return its index
-        }
 
-        if (arr[mid] < target) {
+        if arr[mid] < target:
             left = mid + 1;
-        } else {
+        else:
             right = mid - 1;
-        }
-    }
 
     return -1;  // Target value not found in the array
-}
 ```
 
 If you want to find the closest value that's less than the target value in a sorted array, you can modify the binary search algorithm slightly. At the end of the standard binary search loop, the right pointer will indicate the position where the target should be if it were in the array (or before it).
