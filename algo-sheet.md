@@ -33,25 +33,21 @@ Template
 ```
 
 Example
-```javascript
+```python
 // Find the maximum sum subarray of size `k`:
-function maxSumSubarray(arr: number[], k: number): number {
-    let start = 0;
-    let currentSum = 0;
-    let maxSum = Number.NEGATIVE_INFINITY;
+def maxSumSubarray(arr: List, k: int): 
+    start = 0
+    currentSum = 0
+    maxSum = float(-inf)
 
-    for (let end = 0; end < arr.length; end++) {
-        currentSum += arr[end];
+    for end in range(len(arr)):
+        currentSum += arr[end]
 
-        if (end - start + 1 === k) {
-            maxSum = Math.max(maxSum, currentSum);
-            currentSum -= arr[start];
-            start++;
-        }
-    }
-
-    return maxSum;
-}
+        if end - start + 1 == k:
+            maxSum = max(maxSum, currentSum)
+            currentSum -= arr[start]
+            start += 1
+    return maxSum
 ```
 
 ### Two pointers
@@ -79,26 +75,23 @@ Template
 ```
 
 Example
-```javascript
+```python
 // In a sorted array, find a pair of elements that sum up to a given target:
-function twoSumSorted(arr: number[], target: number): [number, number] | null {
-    let start = 0;
-    let end = arr.length - 1;
+def twoSumSorted(arr: List, target: int):
+    start = 0
+    end = len(arr) - 1
 
-    while (start < end) {
-        const currentSum = arr[start] + arr[end];
+    while start < end:
+        currentSum = arr[start] + arr[end]
 
-        if (currentSum === target) {
-            return [arr[start], arr[end]];
-        } else if (currentSum < target) {
-            start++;
-        } else {
-            end--;
-        }
-    }
+        if currentSum == target:
+            return arr[start], arr[end]
+        elif currentSum < target:
+            start += 1
+        else:
+            end -= 1
 
-    return null; // No pair found
-}
+    return None # No pair found
 ```
 
 ### Traversing from the right
@@ -286,7 +279,7 @@ When a given sequence is in a sorted order (be it ascending or descending), usin
 
 Template
 ```
-function binarySearch(array, target):
+def binarySearch(array, target):
     1. Define two pointers: "left" initialized to 0 and "right" initialized to (length of array - 1).
     
     2. While "left" is less than or equal to "right":
@@ -302,7 +295,7 @@ function binarySearch(array, target):
 ```
 
 ```python
-def binarySearch(arr: number[], target: number):
+def binarySearch(arr: List, target: int):
     left = 0;
     right = length(arr) - 1
 
@@ -324,22 +317,26 @@ If you want to find the closest value that's less than the target value in a sor
 
 You can use this property to get the closest value less than the target. After the loop ends, the value at `arr[right]` would be the closest value less than the target (if right is within the bounds of the array).
 
-```javascript
-// White loop here
-while (...)
+```python
+// While loop here
+while ...
 
 // Check if 'right' is within bounds
-if (right >= 0) {
+if right >= 0:
     return arr[right];
-}
+
 ```
+
+Other details:
+- multiple binary searches are O(log(n) + log(m))
+- sometimes you might have to compare mid with neighbouring values to find peaks or with left or right pointer to find a pivot 
 
 ### Sorting an input that has limited range
 Counting sort is a non-comparison-based sort you can use on numbers where you know the range of values beforehand.
 
 Template
 ```
-function countingSort(inputArray, maxValue):
+def countingSort(inputArray, maxValue):
     1. Initialize an array "count" of zeros with a size of (maxValue + 1).
     2. For each element "x" in inputArray:
        a. Increment count[x] by 1.
