@@ -304,20 +304,20 @@ function binarySearch(array, target):
 ```python
 def binarySearch(arr: number[], target: number):
     left = 0;
-    right = length(arr) - 1;
+    right = length(arr) - 1
 
     while left <= right:
         mid = (left + right) // 2
 
         if arr[mid] === target:
-            return mid;  // Target value found, return its index
+            return mid
 
         if arr[mid] < target:
-            left = mid + 1;
+            left = mid + 1
         else:
-            right = mid - 1;
+            right = mid - 1
 
-    return -1;  // Target value not found in the array
+    return -1
 ```
 
 If you want to find the closest value that's less than the target value in a sorted array, you can modify the binary search algorithm slightly. At the end of the standard binary search loop, the right pointer will indicate the position where the target should be if it were in the array (or before it).
