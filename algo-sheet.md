@@ -34,8 +34,9 @@ Template
 
 Example
 ```python
-// Find the maximum sum subarray of size `k`:
+# Find the maximum sum subarray of size `k`:
 def maxSumSubarray(arr: List, k: int): 
+
     start = 0
     currentSum = 0
     maxSum = float(-inf)
@@ -47,6 +48,7 @@ def maxSumSubarray(arr: List, k: int):
             maxSum = max(maxSum, currentSum)
             currentSum -= arr[start]
             start += 1
+
     return maxSum
 ```
 
@@ -76,8 +78,9 @@ Template
 
 Example
 ```python
-// In a sorted array, find a pair of elements that sum up to a given target:
+# In a sorted array, find a pair of elements that sum up to a given target:
 def twoSumSorted(arr: List, target: int):
+
     start = 0
     end = len(arr) - 1
 
@@ -103,7 +106,74 @@ Is the array sorted or partially sorted? If it is, some form of binary search sh
 Can you sort the array? Sometimes sorting the array first may significantly simplify the problem. Obviously this would not work if the order of array elements need to be preserved. Examples: Merge Intervals, Non-overlapping Intervals
 
 ### Precomputation
-For questions where summation or multiplication of a subarray is involved, pre-computation using hashing or a prefix/suffix sum/product might be useful. Examples: Product of Array Except Self, Minimum Size Subarray Sum, LeetCode questions tagged "prefix-sum"
+For questions where summation or multiplication of a subarray is involved, pre-computation using hashing or a prefix/suffix sum/product might be useful. Examples: Product of Array Except Self, Minimum Size Subarray Sum, LeetCode questions tagged "prefix-sum".
+
+matrix prefix sum
+- we want to calculate all elements in matrix before. So lets say we want to calculate a prefix sum for a particular cell. That means we assume that is bottom right of rectangle and the sum is all the points in that.
+- The prefix is the sum of all points up to that point (the rows and columns before it)
+```python
+A = [
+    [1, 2, 1],
+    [3, 4, 1],
+    [2, 1, 5]
+]
+
+
+# Assume n = number of rows, m = number of columns
+prefix = [[0] * m for _ in range(n)]
+
+for i in range(n):
+    for j in range(m):
+        prefix[i][j] = A[i][j]
+        # A is the original matrix
+        if i > 0:
+            prefix[i][j] += prefix[i-1][j]
+        if j > 0:
+            prefix[i][j] += prefix[i][j-1]
+        if i > 0 and j > 0:
+            prefix[i][j] -= prefix[i-1][j-1]
+
+# Prefix then becomes
+prefix = [
+    [ 1,  3,  4 ],
+    [ 4, 10, 12 ],
+    [ 6, 13, 20 ]
+]
+
+
+```
+
+To query the sum of any submatrix where r1,c1 and r2,c2 are the top left and bottom right of rectangle:
+The equation is:
+```
+sum = prefix[r2][c2] − prefix[r2][c1−1] − prefix[r1−1][c2] + prefix[r1−1][c1−1]
+```
+
+```python
+# Query shape with top-left = (1,1) and bottom-right = (2,2)
+# [4, 1]
+# [1, 5]
+# sum=prefix[2][2]−prefix[2][0]−prefix[0][2]+prefix[0][0]
+
+
+def query_submatrix_sum(prefix, r1, c1, r2, c2):
+    result = prefix[r2][c2]
+
+    # all the columns before
+    if c1 > 0:
+        result -= prefix[r2][c1 - 1]
+
+    # all the rows before
+    if r1 > 0:
+        result -= prefix[r1 - 1][c2]
+
+    # we subtracted this square twice so we have to add it back
+    if r1 > 0 and c1 > 0:
+        result += prefix[r1 - 1][c1 - 1]
+
+    return result
+
+```
 
 ### Index as a hash key
 If you are given a sequence and the interviewer asks for O(1) space, it might be possible to use the array itself as a hash table. For example, if the array only has values from 1 to N, where N is the length of the array, negate the value at that index (minus one) to indicate presence of that number. Examples: First Missing Positive, Daily Temperatures
@@ -184,83 +254,172 @@ Helper Method - MoveToHead(node):
 ```
 
 Example
-```javascript
-class ListNode {
-    key: number;
-    value: number;
-    prev: ListNode | null = null;
-    next: ListNode | null = null;
+```python
+class ListNode:
+    def __init__(self, key, val, nxt=None, prev=None):
+        self.key = key
+        self.val = val
+        self.nxt = nxt
+        self.prev = prev
 
-    constructor(key: number, value: number) {
-        this.key = key;
-        this.value = value;
-    }
-}
+class LRUCache:
 
-class LRUCache {
-    private capacity: number;
-    private map: Map<number, ListNode>;
-    private head: ListNode;  // Most recently used
-    private tail: ListNode;  // Least recently used
+    def __init__(self, capacity: int):
+        self.cache = {}
+        self.capacity = capacity
 
-    constructor(capacity: number) {
-        this.capacity = capacity;
-        this.map = new Map();
-        this.head = new ListNode(0, 0);
-        this.tail = new ListNode(0, 0);
-        this.head.next = this.tail;
-        this.tail.prev = this.head;
-    }
+        self.left = ListNode(0,0)
+        self.right = ListNode(0,0)
+        self.right.prev = self.left
+        self.left.nxt = self.right
 
-    get(key: number): number {
-        if (!this.map.has(key)) return -1;
+    def insert(self, node):
+        prev, nxt = self.right.prev, self.right
+        prev.nxt = node
+        nxt.prev = node
+        node.prev = prev
+        node.nxt = nxt
 
-        const node = this.map.get(key)!;
-        this.moveToHead(node);
-        return node.value;
-    }
+    def remove(self, node):
+        prev, nxt = node.prev, node.nxt
+        prev.nxt = nxt
+        nxt.prev = prev
 
-    put(key: number, value: number): void {
-        if (this.map.has(key)) {
-            const node = this.map.get(key)!;
-            node.value = value;
-            this.moveToHead(node);
-        } else {
-            const newNode = new ListNode(key, value);
-            this.map.set(key, newNode);
-            this.addToHead(newNode);
+    def get(self, key: int) -> int:
+        if key in self.cache:
+            self.remove(self.cache[key])
+            self.insert(self.cache[key])
+            return self.cache[key].val
+        return -1
 
-            if (this.map.size > this.capacity) {
-                const tailNode = this.removeTail();
-                this.map.delete(tailNode.key);
-            }
-        }
-    }
+    def put(self, key: int, value: int) -> None:
+        if key in self.cache:
+            self.remove(self.cache[key])
+        self.cache[key] = ListNode(key, value)
+        self.insert(self.cache[key])
 
-    private moveToHead(node: ListNode): void {
-        this.removeNode(node);
-        this.addToHead(node);
-    }
+        if len(self.cache) > self.capacity:
+            evict = self.left.nxt
+            self.remove(evict)
+            del self.cache[evict.key]
 
-    private addToHead(node: ListNode): void {
-        node.prev = this.head;
-        node.next = this.head.next;
-        this.head.next!.prev = node;
-        this.head.next = node;
-    }
 
-    private removeNode(node: ListNode): void {
-        node.prev!.next = node.next;
-        node.next!.prev = node.prev;
-    }
-
-    private removeTail(): ListNode {
-        const tailNode = this.tail.prev!;
-        this.removeNode(tailNode);
-        return tailNode;
-    }
-}
+# Your LRUCache object will be instantiated and called as such:
+# obj = LRUCache(capacity)
+# param_1 = obj.get(key)
+# obj.put(key,value)
 ```
+
+## Permutations vs. Combinations vs. Power Set vs. Subset vs. Superset
+
+These concepts help in counting and arranging elements from a set. Below is a simple breakdown.
+
+---
+
+### 1️⃣ Permutations (ORDER MATTERS)
+**"How many ways can we ARRANGE things?"**
+- Order **matters**
+- No repeats (unless stated)
+
+#### Example:
+Given `{A, B, C}` and picking 2 letters:
+- **AB, BA, AC, CA, BC, CB** (6 ways)
+
+### Formula:
+P(n, r) = n! / (n - r)!
+- `n` = total items
+- `r` = items chosen
+
+**Use case:** Arranging people in a line, ranking in a competition.
+
+---
+
+### 2️⃣ Combinations (ORDER DOES NOT MATTER)
+**"How many ways can we CHOOSE things?"**
+- Order **does NOT** matter
+- No repeats (unless stated)
+
+#### Example:
+Given `{A, B, C}` and picking 2 letters:
+- **AB, AC, BC** (Just 3 ways, no BA, CA, or CB!)
+
+#### Formula:
+C(n, r) = n! / (r!(n - r)!)
+
+**Use case:** Choosing lottery numbers, selecting a team.
+
+---
+
+### 3️⃣ Power Set (All Possible Subsets)
+**"Give me every possible group of elements, including the empty set and full set."**
+- Includes **all subsets** (even the empty set!)
+
+#### Example:
+Given `{A, B, C}`:
+{ {}, {A}, {B}, {C}, {A, B}, {A, C}, {B, C}, {A, B, C} }
+
+
+#### Formula:
+For a set of size `n`, the power set has **`2^n` subsets**.
+(E.g., `{A, B, C}` has `2^3 = 8` subsets.)
+
+**Use case:** Finding every possible group of elements.
+
+---
+
+### 4️⃣ Subset (A "Part" of a Set)
+**"A set that is fully contained in another set."**
+- If `X` is a subset of `Y`, everything in `X` is in `Y`.
+- **Every power set element is a subset**
+
+#### Example:
+- `{A, B}` is a subset of `{A, B, C}`, but `{A, D}` is NOT.
+
+**Use case:** A folder inside another folder.
+
+---
+
+### 5️⃣ Superset (The "Bigger Set")
+**"The opposite of a subset"**
+- If `X` is a superset of `Y`, it contains all of `Y`.
+
+#### Example:
+- `{A, B, C}` is a superset of `{A, B}`.
+
+**Use case:** The "parent" set.
+
+---
+
+### 6️⃣ Cartesian Product (Pairs from Two Sets)
+**"All possible pairs between two sets"**
+- If `A = {1, 2}` and `B = {X, Y}`, then:
+A × B = {(1, X), (1, Y), (2, X), (2, Y)}
+
+
+**Use case:** Matching items from two lists.
+
+---
+
+### **TL;DR Summary:**
+
+| Concept | Order Matters? | Duplicates? | Example (for ABC) |
+|---------|---------------|------------|-------------------|
+| **Permutation** | ✅ Yes | ❌ No | `AB, BA, AC, CA, BC, CB` |
+| **Combination** | ❌ No | ❌ No | `AB, AC, BC` |
+| **Power Set** | ❌ No | ✅ Yes | `{ {}, {A}, {B}, {C}, {A, B}, {A, C}, {B, C}, {A, B, C} }` |
+| **Subset** | ❌ No | ✅ Yes | `{A, B}` is a subset of `{A, B, C}` |
+| **Superset** | ❌ No | ✅ Yes | `{A, B, C}` is a superset of `{A, B}` |
+| **Cartesian Product** | ✅ Yes | ✅ Yes | `{(A, 1), (A, 2), (B, 1), (B, 2), (C, 1), (C, 2)}` |
+
+---
+
+### **Final Trick to Remember:**
+✅ **If order matters → it's a permutation.**  
+✅ **If order doesn't matter → it's a combination.**  
+✅ **If you list ALL subsets → it's a power set.**  
+✅ **If a set is inside another → it's a subset.**  
+✅ **If a set contains another → it's a superset.**  
+
 
 ## Recursion
 
@@ -272,9 +431,8 @@ class LRUCache {
 ### Memoization
 In some cases, you may be computing the result for previously computed inputs. Let's look at the Fibonacci example again. fib(5) calls fib(4) and fib(3), and fib(4) calls fib(3) and fib(2). fib(3) is being called twice! If the value for fib(3) is memoized and used again, that greatly improves the efficiency of the algorithm and the time complexity becomes O(n).
 
-## Sorting
 
-### Binary search
+## Binary search
 When a given sequence is in a sorted order (be it ascending or descending), using binary search should be one of the first things that come to your mind.
 
 Template
@@ -296,13 +454,13 @@ def binarySearch(array, target):
 
 ```python
 def binarySearch(arr: List, target: int):
-    left = 0;
+    left = 0
     right = length(arr) - 1
 
     while left <= right:
         mid = (left + right) // 2
 
-        if arr[mid] === target:
+        if arr[mid] == target:
             return mid
 
         if arr[mid] < target:
@@ -318,10 +476,10 @@ If you want to find the closest value that's less than the target value in a sor
 You can use this property to get the closest value less than the target. After the loop ends, the value at `arr[right]` would be the closest value less than the target (if right is within the bounds of the array).
 
 ```python
-// While loop here
+# While loop here
 while ...
 
-// Check if 'right' is within bounds
+# Check if 'right' is within bounds
 if right >= 0:
     return arr[right];
 
@@ -331,60 +489,13 @@ Other details:
 - multiple binary searches are O(log(n) + log(m))
 - sometimes you might have to compare mid with neighbouring values to find peaks or with left or right pointer to find a pivot 
 
-### Sorting an input that has limited range
-Counting sort is a non-comparison-based sort you can use on numbers where you know the range of values beforehand.
-
-Template
-```
-def countingSort(inputArray, maxValue):
-    1. Initialize an array "count" of zeros with a size of (maxValue + 1).
-    2. For each element "x" in inputArray:
-       a. Increment count[x] by 1.
-
-    3. Initialize an output array "sortedArray" of the same size as inputArray.
-    4. Initialize a position variable "pos" to 0.
-    5. For each index "i" from 0 to maxValue:
-       a. While count[i] is greater than 0:
-          i. Place the value "i" in sortedArray[pos].
-          ii. Increment pos by 1.
-          iii. Decrement count[i] by 1.
-
-    6. Return sortedArray.
-```
-
-Example
-```javascript
-function countingSort(arr: number[], maxValue: number): number[] {
-    // Step 1: Initialize count array
-    const count: number[] = new Array(maxValue + 1).fill(0);
-
-    // Step 2: Populate count array with frequencies
-    for (let num of arr) {
-        count[num]++;
-    }
-
-    // Step 3-5: Reconstruct the sorted array using the count array
-    let sortedIndex = 0;
-    const sortedArray: number[] = new Array(arr.length);
-
-    for (let i = 0; i < count.length; i++) {
-        while (count[i] > 0) {
-            sortedArray[sortedIndex] = i;
-            sortedIndex++;
-            count[i]--;
-        }
-    }
-
-    // Step 6: Return the sorted array
-    return sortedArray;
-}
-```
 
 ## Matrix
 
 ### Create an empty X x M matrix:
-```javascript
-const matrix = Array(X).fill(undefined).map(() => Array(M).fill(-1)); // Replace -1 for whatever default value you want
+When we say an 𝑋 × 𝑀, 𝑋 is typically the number of rows and 𝑀 is the number of columns. So 𝑋 × 𝑀 means 𝑋 rows and 𝑀 columns. For example, a 3 × 5 matrix has 3 rows and 5 columns.
+```python
+matrix = [[None] * M for _ in range(X)]
 ```
 
 ### Transposing a matrix
@@ -412,52 +523,57 @@ function transpose(matrix: number[][]): number[][] {
 ### Sentinel/dummy nodes
 Adding a sentinel/dummy node at the head and/or tail might help to handle many edge cases where operations have to be performed at the head or the tail. The presence of dummy nodes essentially ensures that operations will never be done on the head or the tail, thereby removing a lot of headache in writing conditional checks to dealing with null pointers. Be sure to remember to remove them at the end of the operation.
 
-Example
-```javascript
-class ListNode {
-    val: number;
-    next: ListNode | null = null;
-
-    constructor(val?: number, next?: ListNode | null) {
-        this.val = (val === undefined ? 0 : val);
-        this.next = (next === undefined ? null : next);
-    }
-}
-
-function mergeTwoSortedLists(l1: ListNode | null, l2: ListNode | null): ListNode | null {
-    const dummy = new ListNode(-1);  // Sentinel/dummy node
-    let current = dummy;  // Pointer to build the merged list
-
-    while (l1 !== null && l2 !== null) {
-        if (l1.val < l2.val) {
-            current.next = l1;
-            l1 = l1.next;
-        } else {
-            current.next = l2;
-            l2 = l2.next;
-        }
-        current = current.next!;
-    }
-
-    // If there are remaining nodes in l1 or l2
-    if (l1 !== null) {
-        current.next = l1;
-    } else {
-        current.next = l2;
-    }
-
-    return dummy.next;  // Return the next of dummy as the merged list's head
-}
-```
-
-In the `mergeTwoSortedLists` function, we utilize a dummy node as the head of our merged list. By doing this, we don't have to write special logic to initialize the head of the merged list, because `dummy.next` will naturally point to the start of the merged list at the end of the process. The dummy node serves as a placeholder and helps in simplifying the code.
-
 ## Two pointers
 Two pointer approaches are also common for linked lists. This approach is used for many classic linked list problems.
 
 - Getting the kth from last node - Have two pointers, where one is k nodes ahead of the other. When the node ahead reaches the end, the other node is k nodes behind
 - Detecting cycles - Have two pointers, where one pointer increments twice as much as the other, if the two pointers meet, means that there is a cycle
-- Getting the middle node - Have two pointers, where one pointer increments twice as much as the other. When the faster node reaches the end of the list, the slower node will be at the middle
+- Getting the middle node - Have two pointers, where one pointer increments twice as much as the other. When the faster node reaches the end of the list, the slower node will be at the middle. We can have `while curr and curr.next` to stop after middle in even length linked list or we can add `and curr.next.next` to stop before middle.
+
+Example - where multiple pointers
+
+Given a linked list, swap every two adjacent nodes and return its head. You must solve the problem without modifying the values in the list's nodes (i.e., only nodes themselves may be changed.)
+
+Input: head = [1,2,3,4]
+
+Output: [2,1,4,3]
+
+Input: head = [1,2,3]
+
+Output: [2,1,3]
+
+```python
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+
+class Solution:
+    def swapPairs(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        
+        dummy = ListNode(0, head)
+        # Why prev? When we iterate through the list we need to set the prev pointer to the second node in the current pair
+        prev, curr = dummy, head
+
+        while curr and curr.next:
+            # identify nodes of importance. It is often useful to simplify pointers doing what we do with `second`. It makes future executions with second much easier.
+            next_pair = curr.next.next
+            second = curr.next
+
+            # do the swaps and make prev point to second
+            second.next = curr
+            curr.next = next_pair
+            prev.next = second
+
+            # update the pointers
+            prev = curr
+            curr = next_pair
+
+        return dummy.next
+```
+
+In the `swapPairs` function, we utilize a dummy node as the head of our list. By doing this, we don't have to write special logic to initialize the head of the list, because `dummy.next` will naturally point to the start of the merged list at the end of the process. The dummy node serves as a placeholder and helps in simplifying the code. It also provides an initial `prev.next` for `second`.
 
 ### Using space
 Many linked list problems can be easily solved by creating a new linked list and adding nodes to the new linked list with the final result. However, this takes up extra space and makes the question much less challenging. The interviewer will usually request that you modify the linked list in-place and solve the problem without additional storage. You can borrow ideas from the Reverse a Linked List problem.
@@ -470,9 +586,6 @@ Here are some common operations and how they can be achieved easily:
 - Swapping values of nodes - Just like arrays, just swap the value of the two nodes, there's no need to swap the next pointer
 - Combining two lists - attach the head of the second list to the tail of the first list
 
-## Queue
-
-Most languages don't have a built-in Queue class which can be used, and candidates often use arrays (JavaScript) or lists (Python) as a queue. However, note that the dequeue operation (assuming the front of the queue is on the left) in such a scenario will be O(n) because it requires shifting of all other elements left by one. In such cases, you can flag this to the interviewer and say that you assume that there's a queue data structure to use which has an efficient dequeue operation.
 
 ## Interval
 
@@ -500,74 +613,98 @@ def merge_overlapping_intervals(a, b):
 
 ### Traversals
 
-- In-order traversal - Left -> Root -> Right.<br/>
+- Inorder traversal - Left -> Root -> Right.<br/>
 Result: 2, 7, 5, 6, 11, 1, 9, 5, 9
-- Pre-order traversal - Root -> Left -> Right<br/>
+- Preorder traversal - Root -> Left -> Right<br/>
 Result: 1, 7, 2, 6, 5, 11, 9, 9, 5
-- Post-order traversal - Left -> Right -> Root<br/>
+- Postorder traversal - Left -> Right -> Root<br/>
 Result: 2, 5, 11, 6, 7, 5, 9, 9, 1
 
 Example (Recursive)
-```javascript
-class TreeNode {
-    val: number;
-    left: TreeNode | null = null;
-    right: TreeNode | null = null;
+```python
+class TreeNode:
+    def __init__(self, val, left, right):
+        self.val = val
+        self.left = left
+        self.right = right
+```
+```python
+# Inorder Traversal (Left, Root, Right)
+def inorder_traversal(root):
+    res = []
 
-    constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
-        this.val = (val === undefined ? 0 : val);
-        this.left = (left === undefined ? null : left);
-        this.right = (right === undefined ? null : right);
-    }
-}
+    def helper(root):
+        if not root:
+            return None
 
-// In-Order Traversal (Left, Root, Right)
-function inOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
-    
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
+        if root.left:
+            inorder(root.left)
+
+        res.append(root.val)
+
+        if root.right:
+            inorder(root.right)
+
+    helper(root)
+    return res
+```
+Iterative inorder traversal
+
+```python
+def iterative_inorder_traversal(root):
+    res = []
+    stack = []
+    curr = root
+
+    while curr or stack:
+        while curr:
+            stack.append(curr)
+            curr = curr.left
+
+        curr = stack.pop()
         
-        helper(node.left);
-        result.push(node.val);
-        helper(node.right);
-    }
+        res.append(curr.val)
+        
+        if curr.right:
+            curr = curr.right
 
-    helper(root);
-    return result;
-}
+    return res
+```
 
-// Pre-Order Traversal (Root, Left, Right)
-function preOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
-    
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
+```python
+# Pre-Order Traversal (Root, Left, Right)
+def preOrderTraversal(root: TreeNode):
+    result = []
 
-        result.push(node.val);
-        helper(node.left);
-        helper(node.right);
-    }
+    def helper(node: TreeNode):
+        if node == None: 
+            return
 
-    helper(root);
-    return result;
-}
+        result.append(node.val)
+        helper(node.left)
+        helper(node.right)
 
-// Post-Order Traversal (Left, Right, Root)
-function postOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
+    helper(root)
+    return result
+```
 
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
 
-        helper(node.left);
-        helper(node.right);
-        result.push(node.val);
-    }
+```python
+# Post-Order Traversal (Left, Right, Root)
+def postOrderTraversal(root: TreeNode):
+    result = []
 
-    helper(root);
-    return result;
-}
+    def helper(node: TreeNode):
+        if node == None: 
+            return
+
+        helper(node.left)
+        helper(node.right)
+        result.append(node.val)
+
+    helper(root)
+    return result
+
 ```
 
 Example (Iterative)
@@ -584,25 +721,6 @@ class TreeNode {
     }
 }
 
-// In-Order Traversal (Left, Root, Right)
-function inOrderTraversal(root: TreeNode | null): number[] {
-    const result: number[] = [];
-    const stack: TreeNode[] = [];
-    let current: TreeNode | null = root;
-
-    while (current !== null || stack.length > 0) {
-        while (current !== null) {
-            stack.push(current);
-            current = current.left;
-        }
-
-        current = stack.pop()!;
-        result.push(current.val);
-        current = current.right;
-    }
-
-    return result;
-}
 
 // Pre-Order Traversal (Root, Left, Right)
 function preOrderTraversal(root: TreeNode | null): number[] {
@@ -683,6 +801,94 @@ You can be given a list of edges and you have to build your own graph from the e
 - Hash table of hash tables
 
 Using a hash table of hash tables would be the simplest approach during algorithm interviews. It will be rare that you have to use an adjacency matrix or list for graph questions during interviews.
+
+Graph problems usually fall into one of the following categories:
+
+### 1. Has a Cycle? (Cycle Detection)
+#### **Type:** Cycle Detection (Directed or Undirected)
+#### **Approaches:**
+- **Undirected Graph:** Use **DFS with a parent check** or **Union-Find**.
+- **Directed Graph:** Use **DFS with a visited + recursion stack** check (detects back edges).
+- **Kahn’s Algorithm (BFS-based Topological Sort):** If all nodes are processed but a node still has an incoming edge, a cycle exists.
+
+#### **Example Problems:**
+- Detect if an undirected graph has a cycle.
+- Detect if a directed graph has a cycle (i.e., check if it’s a Directed Acyclic Graph, DAG).
+
+---
+
+### 2. Has a Valid Path? (Path Finding / Connectivity)
+#### **Type:** Path Finding / Connectivity Check
+#### **Approaches:**
+- **BFS / DFS:** Standard traversal to check if two nodes are connected.
+- **Union-Find (Disjoint Set):** If both nodes belong to the same connected component, a path exists.
+- **Dijkstra’s Algorithm:** If weighted, find the shortest path.
+- **Bellman-Ford / Floyd-Warshall:** If there are negative weights.
+
+#### **Example Problems:**
+- Find if there is a path between two nodes.
+- Find the shortest path between two nodes.
+
+---
+
+### 3. What is the Path? (Topological Sorting / Order of Execution)
+#### **Type:** Topological Sorting (for Directed Acyclic Graphs - DAGs)
+#### **Approaches:**
+- **DFS-Based Topological Sort:** Perform DFS and push nodes to a stack (reverse order gives topological sorting).
+- **Kahn’s Algorithm (BFS-Based Topological Sort):** Maintain **in-degree** counts and process nodes with in-degree = 0.
+
+#### **Example Problems:**
+- Course schedule problems (can you take all courses in order?).
+- Build systems / Task scheduling with dependencies.
+- Finding a valid order of execution.
+
+---
+
+### 4. What is the Shortest / Cheapest Path? (Weighted Graphs)
+#### **Type:** Shortest Path Algorithms
+#### **Approaches:**
+- **Unweighted Graph:** BFS finds the shortest path.
+- **Weighted Graph (No Negative Weights):** Dijkstra’s Algorithm.
+- **Weighted Graph (Negative Weights Allowed):** Bellman-Ford Algorithm.
+- **Find shortest paths between all pairs:** Floyd-Warshall Algorithm.
+
+#### **Example Problems:**
+- Find the shortest route between two cities.
+- Optimize network packet transmission.
+
+---
+
+### 5. What are the Connected Components? (Find All Groups of Connected Nodes)
+#### **Type:** Connected Components / Graph Clustering
+#### **Approaches:**
+- **DFS / BFS:** Find and mark all reachable nodes in one traversal.
+- **Union-Find:** Keep track of connected components dynamically.
+
+#### **Example Problems:**
+- Count the number of provinces (groups of friends).
+- Find islands in a 2D grid (number of connected land regions).
+
+---
+
+### 6. Is the Graph Bipartite? (Two-Coloring Problem)
+#### **Type:** Graph Coloring / Bipartite Check
+#### **Approaches:**
+- **BFS / DFS with two colors:** Alternate colors while traversing.
+- **Union-Find:** If two nodes in the same component have the same color, it’s not bipartite.
+
+#### **Example Problems:**
+- Check if a given graph is bipartite.
+- Determine if a graph can be divided into two groups without conflicts.
+
+---
+
+### Final Thoughts
+- If a problem involves finding **connections**, **paths**, or **cycles**, it’s a graph problem.
+- **BFS** is great for **shortest unweighted paths**.
+- **DFS** is useful for **cycle detection**, **topological sorting**, and **exploring all paths**.
+- **Union-Find** is best for **connectivity problems**.
+- **Dijkstra and Bellman-Ford** help with **weighted shortest path problems**.
+
 
 ```javascript
 // Let's assume you're given a list of edges as input, where each edge is a tuple of two nodes, e.g., ["A", "B"] means there's an edge between nodes "A" and "B"
@@ -1046,7 +1252,11 @@ Tries are special trees (prefix trees) that make searching and storing strings m
 Be familiar with implementing from scratch, a Trie class and its add, remove and search methods.
 
 Example:
-```javascript
+```python
+class TrieNode:
+    def __init__(key, eow):
+        self.key = key
+        self.isendofword = 
 class TrieNode {
     children: { [key: string]: TrieNode } = {};
     isEndOfWord: boolean = false;
@@ -1224,66 +1434,70 @@ function cleanRoom(robot: Robot) {
 
 Kadane's algorithm is used to find the maximum sum of a contiguous subarray within a one-dimensional array of numbers.
 
-```javascript
-function maxSubArraySum(arr: number[]): number {
-    if (arr.length === 0) {
-        return 0;
-    }
+It checks the first contiguous numbers and if they are below 0, we can ignore those coniguous numbers
 
-    let maxCurrent = arr[0];
-    let maxGlobal = arr[0];
+```python
+def maxSubArraySum(nums):
+    if len(nums) == 0:
+        return 0
 
-    for (let i = 1; i < arr.length; i++) {
-        maxCurrent = Math.max(arr[i], maxCurrent + arr[i]);
-        maxGlobal = Math.max(maxGlobal, maxCurrent);
-    }
+    tot = 0
+    max_tot = -float("inf")
 
-    return maxGlobal;
-}
+    for i in range(len(nums)):
+        if tot < 0:
+            tot = 0
 
-// Example usage:
-const numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-console.log(maxSubArraySum(numbers));  // Outputs: 6 (because [4, -1, 2, 1] has the largest sum)
+        tot += nums[i]
+        max_tot = max(max_tot, tot)
+
+    return max_tot
+
+
+# Example usage:
+numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+print(maxSubArraySum(numbers))  # Outputs: 6 (because [4, -1, 2, 1] has the largest sum)
 ```
 
-If you want to track the start and end indices of the subarray with the largest sum, you can use the following code:
+If you a circular subarray (the end is connected to the start), the intuition is to find the min contigious sub array. The remaining elements would be the max contigious sub array so you get sum(nums) - min_tot. This has only a chance of being a solution. If the actual max subarray isn't circular, then this won't work so in this case, use the usual algorithm.
 
-```javascript
-function maxSubArraySumWithIndices(arr: number[]): { sum: number, start: number, end: number } {
-    if (arr.length === 0) {
-        return { sum: 0, start: -1, end: -1 };
-    }
+There is an edge case where all the numbers are negative:
+```python
+nums = [-3,-2,-3]
+```
+The smallest possible contiguous array is all of the elements which is the same as the sum of the array.
 
-    let maxCurrent = arr[0];
-    let maxGlobal = arr[0];
+Thus sum_array - min_tot = 0 which is larger than max_tot which is not the right answer.
 
-    let start = 0;
-    let end = 0;
-    let tempStart = 0;
-
-    for (let i = 1; i < arr.length; i++) {
-        if (arr[i] > maxCurrent + arr[i]) {
-            maxCurrent = arr[i];
-            tempStart = i;
-        } else {
-            maxCurrent += arr[i];
-        }
-
-        if (maxCurrent > maxGlobal) {
-            maxGlobal = maxCurrent;
-            start = tempStart;
-            end = i;
-        }
-    }
-
-    return { sum: maxGlobal, start: start, end: end };
-}
-
-// Example usage:
-const numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-const result = maxSubArraySumWithIndices(numbers);
-console.log(`Max sum is: ${result.sum} from index ${result.start} to ${result.end}`);  
-// Outputs: Max sum is: 6 from index 3 to 6 (because [4, -1, 2, 1] has the largest sum)
+The right answer is just max_tot
+```python
+def maxSubarraySumCircular(self, nums: List[int]) -> int:
+    if not nums:
+        return 0
+    
+    max_tot = -float("inf")
+    min_tot = float("inf")
+    sum_array = 0
+    curr_max = 0
+    curr_min = 0
+    
+    for num in nums:
+        # to find total sum
+        sum_array += num
+        
+        # For maximum subarray
+        if curr_max < 0:
+            curr_max = 0
+        curr_max += num
+        max_tot = max(max_tot, curr_max)
+        
+        # For minimum subarray
+        if curr_min > 0:
+            curr_min = 0
+        curr_min += num
+        min_tot = min(min_tot, curr_min)
+    
+    return max(max_tot, sum_array - min_tot) if max_tot > 0 else max_tot
 ```
 
 ## Great Explanation of Dynamic Programming (DP)
@@ -1443,42 +1657,104 @@ The primary purpose of a monotonic stack is to efficiently answer questions like
 Let's dive into an example:
 
 **Problem Statement:**
-Given an array of numbers, for each element, find the first larger number to its right.
+Given a circular array of numbers, for each element, find the first larger number to its right. If no larger number return -1.
 
 **Example:**
 Input: `[4, 3, 2, 5, 1]`
-Output: `[5, 5, 5, -1, -1]`
+Output: `[5, 5, 5, -1, 4]`
 
 **Explanation:** 
 For `4`, the next larger number is `5`.
 For `3`, the next larger number is `5`.
 For `2`, the next larger number is `5`.
 For `5`, there is no larger number, hence `-1`.
-For `1`, there is no larger number, hence `-1`.
+For `1`, the next larger number is `4`.
 
-**Typescript Solution using Monotonic Stack:**
-```typescript
-function nextLargerElement(nums: number[]): number[] {
-    const result: number[] = Array(nums.length).fill(-1); // initialize result array with -1s
-    const stack: number[] = []; // this will store indices
+**Python Solution using Monotonic Stack:**
+```python
+def nextLargerElement(nums: List[int]) -> List[int]
 
-    for (let i = 0; i < nums.length; i++) {
-        while (stack.length && nums[i] > nums[stack[stack.length - 1]]) {
-            const idx = stack.pop() as number; // get the last index from the stack
-            result[idx] = nums[i]; // we found the next greater element for the element at index `idx`
-        }
-        stack.push(i); // push the current index to the stack
-    }
+    result = [-1] * len(nums) # initialize result array with -1 as we want to return -1 if no next max
+    stack = []
 
-    return result;
-}
+    for i in range(len(nums)*2): # multiply by 2 to simulate traversing circular array
+        while stack and nums[i % len(nums)] > nums[stack[-1]]:
+            top = stack.pop()
+            res[top] = nums[i % len(nums)]
 
-// Testing the function
-const input = [4, 3, 2, 5, 1];
-console.log(nextLargerElement(input)); // Expected output: [5, 5, 5, -1, -1]
+
+        if i < len(nums):
+            stack.append(i)
+
+    return result
+
+
+# Testing the function
+input = [4, 3, 2, 5, 1]
+print(nextLargerElement(input)) # Expected output: [5, 5, 5, -1, 4]
 ```
 
 In this solution, we're keeping the stack in non-decreasing order. When a larger number is found, we keep popping from the stack until we find a number that's greater than the current one or the stack becomes empty. This helps in finding the next larger number for all the numbers that are smaller than the current number.
+
+## Monotonic queues
+
+When to use this? When we wanna find out about a property in a partrticular range or sliding window. We are now using deques to identify a min or max (could also use heap but popleft() and pop() are better than heap operations)
+
+**Problem Statement:**
+Given an array of integers nums and an integer limit, return the size of the longest non-empty subarray such that the absolute difference between any two elements of this subarray is less than or equal to limit.
+**Example:**
+nums = `[8,2,4,7]` , limit = 4
+Output: 2
+
+**Explanation:** 
+All subarrays are: 
+- [8] with maximum absolute diff |8-8| = 0 <= 4.
+- [8,2] with maximum absolute diff |8-2| = 6 > 4. 
+- [8,2,4] with maximum absolute diff |8-2| = 6 > 4.
+- [8,2,4,7] with maximum absolute diff |8-2| = 6 > 4.
+- [2] with maximum absolute diff |2-2| = 0 <= 4.
+- [2,4] with maximum absolute diff |2-4| = 2 <= 4.
+- [2,4,7] with maximum absolute diff |2-7| = 5 > 4.
+- [4] with maximum absolute diff |4-4| = 0 <= 4.
+- [4,7] with maximum absolute diff |4-7| = 3 <= 4.
+- [7] with maximum absolute diff |7-7| = 0 <= 4.
+
+ Therefore, the size of the longest subarray is 2.
+
+ *Python Solution using Monotonic Stack:**
+```python
+def longestSubarray(self, nums: List[int], limit: int) -> int:
+
+        l = 0
+        max_queue = deque()  # Stores indices in decreasing order (max values)
+        min_queue = deque()  # Stores indices in increasing order (min values)
+        res = 0
+
+        for r in range(len(nums)):
+            # Maintain decreasing order in max_queue
+            while max_queue and nums[max_queue[-1]] < nums[r]:
+                max_queue.pop()
+            max_queue.append(r)
+
+            # Maintain increasing order in min_queue
+            while min_queue and nums[min_queue[-1]] > nums[r]:
+                min_queue.pop()
+            min_queue.append(r)
+
+            # Shrink window if the difference exceeds limit
+            while nums[max_queue[0]] - nums[min_queue[0]] > limit:
+                if l > max_queue[0]:  # If the max element index is out of bounds
+                    max_queue.popleft()
+                if l > min_queue[0]:  # If the min element index is out of bounds
+                    min_queue.popleft()
+                l += 1  # Shrink the window from the left
+
+            res = max(res, r - l + 1)  # Update longest valid subarray length
+
+        return res
+
+
+```
 
 ## Peak Valley (Arrays)
 
@@ -1677,6 +1953,147 @@ In summary, while the naive version can be quite slow for large graphs, using a 
 
 ## Sorting
 
+### Merge Sort
+
+Merge Sort is a divide and conquer algorithm. There are 2 parts. Divide and then merge in right order.
+
+- base case is single ordered item
+- split into two lists
+- recurse through 2 parts of list
+- merge the two in correct order by checking each element consecutively
+
+```python
+def mergeSort(nums: List[int]) -> List[int]:
+
+    l, r = 0, len(nums) - 1
+
+    def divide(l: int, r: int):
+        if left > right:
+            return []
+
+        if l == r:
+            return [nums[left]] 
+
+        mid = (r + l) // 2
+
+        left = divide(l, mid)
+        right = divide(mid+1, r)
+
+        return merge(left, right)
+
+    def merge(left_arr: List[int], right_arr: List[int]) -> List[int]:
+
+        res = []
+        i = j = 0
+
+        # Merge while both arrays have elements
+        while i < len(left_arr) and j < len(right_arr):
+            if left_arr[i] <= right_arr[j]:
+                res.append(left_arr[i])
+                i += 1
+            else:
+                res.append(right_arr[j])
+                j += 1
+
+        # Append any leftover elements
+        res.extend(left_arr[i:])
+        res.extend(right_arr[j:])
+        return res
+
+```
+
+Merge sort on linked list
+
+```python
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def sortList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+            
+        if not head or not head.next:
+            return head
+
+        slow = head
+        fast = head
+
+        while fast.next and fast.next.next:
+            fast = fast.next.next
+            slow = slow.next
+
+        # we split the linked list into 2
+        mid = slow.next
+        slow.next = None
+
+        left = self.sortList(head)
+        right = self.sortList(mid)
+
+        return self.merge(left, right)
+
+    def merge(self, left, right):
+        
+        dummy = ListNode(0)
+        curr = dummy
+
+        while left and right:
+            if left.val <= right.val:
+                curr.next = left
+                left = left.next
+            else:
+                curr.next = right
+                right = right.next
+                
+            curr = curr.next
+
+        if not left:
+            curr.next = right
+        elif not right:
+            curr.next = left
+
+        return dummy.next
+
+```
+
+### Counting Sort
+Counting Sort, which is an efficient sorting algorithm for non-negative integers within a limited range. Inefficient for large maxValue due to high space usage
+
+Template
+```
+def countingSort(inputArray, maxValue):
+    1. Initialize an array "count" of zeros with a size of (maxValue + 1).
+    2. For each element "x" in inputArray:
+       a. Increment count[x] by 1.
+
+    3. Initialize an output array "sortedArray" of the same size as inputArray.
+    4. Initialize a position variable "pos" to 0.
+    5. For each index "i" from 0 to maxValue:
+       a. While count[i] is greater than 0:
+          i. Place the value "i" in sortedArray[pos].
+          ii. Increment pos by 1.
+          iii. Decrement count[i] by 1.
+
+    6. Return sortedArray.
+```
+
+Example
+```python
+def countingSort(arr: List[Number]) -> List[Number]:
+
+    maxValue = max(arr)  # Find the max value in arr
+    count = [0 for _ in range(maxValue+1)] # Frequency array (index is the number, value is count)
+    
+    for i in range(len(arr)):
+        count[arr[i]] += 1
+
+    sortedArray = []
+    for i in range(len(count)):
+        sortedArray.extend([i] * count[i])
+
+    return sortedArray
+```
+
 ### Quick Sort
 
 Quick Sort is a divide-and-conquer algorithm that works on the principle of choosing a 'pivot' element from the array and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than the pivot. The sub-arrays are then sorted recursively.
@@ -1743,3 +2160,89 @@ const sortedArray = quickSortHelper(arr);
 console.log('Sorted Array:', sortedArray);
 ```
 
+
+
+# Bit Manipulation
+
+Bits are base 2, hexadecimal is base 16 where numbers 10 and above are represented by letters up to 16
+
+The index represents the power.
+```
+a = "1010"
+```
+This is
+
+```
+1x2^3 + 0x2^2 + 1x2^1 + 0x2^0 = 10
+```
+
+Two's complement is used to represent negative numbers (simplifies computer arithmetic by eliminating the need for separate addition/subtraction circuits and handling the sign bit): 
+- Invert all bits (1s complement)
+- Add 1 to the result
+
+Example for -10:
+```
+Original:     1010 (10)
+Invert:       0101
+Add 1:        0110 (-10 in two's complement)
+```
+
+When adding twos compliment and non twos compliment form:
+ - All bits (including the sign bit) take part in the binary addition in two’s complement.
+ - discard any extra carry beyond the nth bit because you are working with a fixed size
+
+to add 5 and -3, we must get -3 by converting 3 to -3 using twos compliment then
+ e.g. 
+ ```
+0101 (+5) + 1101 (-3) = 0010 (2)
+```
+
+```python
+# AND (&): 1 if both bits are 1
+    1010
+  & 1100
+  = 1000
+
+# OR (|): 1 if either bit is 1
+    1010
+  | 1100
+  = 1110
+
+# XOR (^): 1 if bits are different
+    1010
+  ^ 1100
+  = 0110
+
+# NOT (~): Inverts all bits
+  ~ 1010
+  = 0101
+
+# Left Shift (<<): Shifts bits left, adds 0s
+  1010 << 1 = 10100
+
+# Right Shift (>>): Shifts bits right
+  1010 >> 1 = 101
+```
+Common Bit Manipulation Tricks:
+```python
+# Check if power of 2
+n & (n-1) == 0
+
+# Get last set bit
+n & -n
+
+# Count set bits (1s)
+bin(n).count('1')
+
+# Check if ith bit is set
+n & (1 << i)
+
+# Set ith bit
+n | (1 << i)
+
+# Clear ith bit
+n & ~(1 << i)
+
+# Toggle ith bit
+n ^ (1 << i)
+```
